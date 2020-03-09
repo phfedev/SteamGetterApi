@@ -1,8 +1,12 @@
 const express = require('express')
 const axios = require('axios')
-require('dotenv').config()
+var cors = require('cors')
 const server = express()
+require('dotenv').config()
+
 server.use(express.json())
+server.use(cors())
+
 const steamKey = process.env.STEAM_API_KEY
 server.get('/steamid/:steamNick', async(req, res) => {
   const steamId = await getSteamId(req.params.steamNick)
@@ -20,11 +24,35 @@ server.get('/steamgames/:steamId', async(req, res) => {
   res.send(steamGames)
 })
 
+server.get('/steamfriends/:steamId', async(req, res) => {
+  const steamFriends = await getSteamFriends(req.params.steamId)
+  res.send(steamFriends)
+})
+
+async function getSteamFriends(steamId){
+  const friendsId = []
+  const friendsNick = []
+  //friendslist.friends[0].steamid
+  const url = `http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key=${steamKey}&steamid=${steamId}&relationship=friend`
+  const fullReq = await axios.get(url).then(async(resp) => {
+    for(pos in resp.data.friendslist.friends){
+      friendsId.push(resp.data.friendslist.friends[pos].steamid)
+      let friend = await getSteamInfo(friendsId[pos])
+      friendsNick.push(friend.personaname)
+      //response.players[0].personaname
+      console.log(friendsNick)
+    }
+    //const fullResponse = resp.data.response.players[0]
+    return friendsNick
+  }).catch((error => console.log(error)))
+  return fullReq
+}
+
 async function getSteamInfo(steamId){
   const url = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${steamKey}&steamids=${steamId}`
   const fullReq = await axios.get(url).then((resp) => {
     const fullResponse = resp.data.response.players[0]
-    return JSON.stringify(fullResponse)
+    return fullResponse
   }).catch((error => console.log(error)))
   return fullReq
 }
@@ -50,7 +78,6 @@ async function getSteamGames(steamId){
   const gameNames = []
   for(game in games){
     gameIds.push(games[game].appid)
-    
   }
   for(pos in gameIds){
     let gameName = await getGameInfo(gameIds[pos])
