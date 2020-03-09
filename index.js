@@ -3,7 +3,7 @@ const axios = require('axios')
 
 const server = express()
 server.use(express.json())
-const steamKey = 'DA58E9E5030428339131C3A32583A210'
+const steamKey = process.env.STEAM_API_KEY
 server.get('/steam/:steamNick', async(req, res) => {
   //const urlGetSteamIdByNick = `http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=DA58E9E5030428339131C3A32583A210&vanityurl=${req.params.steamNick}`
   const steamId = await getSteamId(req.params.steamNick)
